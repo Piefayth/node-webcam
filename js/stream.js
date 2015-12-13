@@ -2,7 +2,7 @@ function streamBlobToServer(stream){
   var BLOB_POLLING_RATE = 1000; //ms
   var options = {};
 
-  var mr = safeMediaRecoder(stream, options);
+  var mr = safeMediaRecorder(stream, options);
 
   var arrayBuffers = [];
 
@@ -26,7 +26,7 @@ function streamBlobToServer(stream){
 
 
 // Passing a blank "options" object to Chrome causes it to break terribly.
-function safeMediaRecoder(stream, options){
+function safeMediaRecorder(stream, options){
   try {
     var mr = new MediaRecorder(stream, options);
   } catch (e){
