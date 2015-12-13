@@ -10,12 +10,12 @@ function init(){
 }
 
 function getAudioSourceId(){
-  var audio = $('#audio-select').val();
+  var audio = $('#audio-input-source').val();
   return audio ? audio : "";
 }
 
 function getVideoSourceId(){
-  var video = $('#video-select').val();
+  var video = $('#video-input-source').val();
   return video ? video : "";
 }
 
@@ -34,7 +34,7 @@ function initializeStream(){
     video.src = window.URL.createObjectURL(stream);
     var audio = document.querySelector('audio');
     audio.src = window.URL.createObjectURL(stream);
-    return Promise.resolve();
+    return initializeSourceSelectionTemplate();
   })
 }
 
@@ -55,4 +55,58 @@ function universalGetUserMedia(constraints){
 
 function configureInputClickHandlers(){
   $('#change-device-button').click(initializeStream);
+}
+
+function initializeSourceSelectionTemplate(){
+  if(navigator.vendor == "Google Inc."){
+    getAudioAndVideoSources()
+    .then(function(sources){
+      return createInputSourceDropdowns(sources);
+    })
+  } else if(navigator.vendor == ""){
+    return createInputSourceButton();
+  }
+}
+
+function createInputSourceDropdowns(sources){
+  if($('#audio-input-source').length > 0) return Promise.resolve();
+
+  var html = Handlebars.templates['input-source-dropdown.js'];
+  $('#input-options-panel').append(html);
+
+  return updateInputSourceDropdowns(sources);
+}
+
+function updateInputSourceDropdowns(sources){
+  var inputSourceHandler = function(type){
+    return function(source){
+      var context = {
+        deviceId: source.deviceId,
+        label: source.label
+      }
+      var html = Handlebars.templates['input-option.js'](context);
+      $('#' + type + '-input-source').append(html);
+    }
+  }
+
+  sources.audio.forEach(inputSourceHandler('audio'));
+  sources.video.forEach(inputSourceHandler('video'));
+
+  return Promise.resolve();
+}
+
+function getAudioAndVideoSources(){
+  var input_devices = { audio: [], video: [] };
+
+  return navigator.mediaDevices.enumerateDevices()
+  .then(function(devices){
+    devices.forEach(function(device){
+      if(device.kind === "audioinput"){
+        input_devices.audio.push(device)
+      } else if(device.kind === "videoinput"){
+        input_devices.video.push(device);
+      }
+    })
+    return Promise.resolve(input_devices);
+  })
 }
