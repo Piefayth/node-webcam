@@ -3,24 +3,56 @@ $(document).ready(function(){
 })
 
 function init(){
-  var constraints = { audio: true, video: true };
-  navigator.mediaDevices.enumerateDevices()
-  .then(function(devices){
-    devices.forEach(function(deviceInfo){
-      var context = { deviceId: deviceInfo.deviceId,
-                      label: deviceInfo.label };
-                      console.log($('#input-option-template').html());
-      var html = Handlebars.template();
-
-      console.log(html);
-      if(deviceInfo.kind === "audioinput"){
-        $('#audio-select').append(html);
-      } else {
-        $('#video-select').append(html);
-      }
-    })
-    var video = document.querySelector('video');
-    //video.src = window.URL.createObjectURL(stream);
+  initializeStream()
+  .then(function(){
+    return configureInputClickHandlers();
   })
+}
 
+function getAudioSourceId(){
+  var audio = $('#audio-select').val();
+  return audio ? audio : "";
+}
+
+function getVideoSourceId(){
+  var video = $('#video-select').val();
+  return video ? video : "";
+}
+
+function initializeStream(){
+  var constraints = {
+    audio: {
+      optional: [{sourceId: getAudioSourceId()}]
+    },
+    video: {
+      optional: [{sourceId: getVideoSourceId()}]
+    }
+  };
+  return universalGetUserMedia(constraints)
+  .then(function(stream){
+    var video = document.querySelector('video');
+    video.src = window.URL.createObjectURL(stream);
+    var audio = document.querySelector('audio');
+    audio.src = window.URL.createObjectURL(stream);
+    return Promise.resolve();
+  })
+}
+
+function universalGetUserMedia(constraints){
+  if(navigator.mediaDevices.getUserMedia){
+    return navigator.mediaDevices.getUserMedia(constraints);
+  } else {
+    navigator.getUserMedia = navigator.getUserMedia         ||
+                             navigator.webkitGetUserMedia   ||
+                             navigator.mozGetUserMedia;
+
+    var mediaPromiseFunction = function(resolve, reject){
+     navigator.getUserMedia(constraints, resolve, reject)
+    }
+    return new Promise(mediaPromiseFunction);
+  }
+}
+
+function configureInputClickHandlers(){
+  $('#change-device-button').click(initializeStream);
 }
