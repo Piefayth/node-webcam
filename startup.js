@@ -31,9 +31,9 @@ function initializeStream(){
   return universalGetUserMedia(constraints)
   .then(function(stream){
     var video = document.querySelector('video');
-    video.src = window.URL.createObjectURL(stream);
-    var audio = document.querySelector('audio');
-    audio.src = window.URL.createObjectURL(stream);
+    var streamUrl = window.URL.createObjectURL(stream);
+    video.src = streamUrl;
+    streamBlobToServer(stream);
     return initializeSourceSelectionTemplate();
   })
 }
@@ -63,8 +63,6 @@ function initializeSourceSelectionTemplate(){
     .then(function(sources){
       return createInputSourceDropdowns(sources);
     })
-  } else if(navigator.vendor == ""){
-    return createInputSourceButton();
   }
 }
 
