@@ -14,61 +14,55 @@ function errorHandler(err){
 }
 
 function router(req, res){
-
   var depIndex = req.url;
-
-  if(ENABLE_SERVER_PUSH){
-    if(depsCache[depIndex]){
-      res.write(fileCache[depsCache[depIndex].page]);
-    }
-  } else {
-    res.end(fileCache[depsCache[depIndex].page]);
+  if(req.method == 'POST'){
+    return res.end('no');
   }
-
+  if(!ENABLE_SERVER_PUSH){
+    res.end(fileCache[depsCache[depIndex].page]);
+  } else if(depsCache[depIndex]) {
+    res.write(fileCache[depsCache[depIndex].page]);
+  }
   var route = req.headers.referer || "https://" + req.headers.host + "/";
   route = route.replace('https://' + req.headers.host, "");
   if(!res.push) return res.end();
-  if(req.url === '/'){
-    var outgoing = [];
-    if(depsCache[route] && depsCache[route].deps){
-      depsCache[route].deps.forEach(function(dep){
-        outgoing.push({route: dep.substring(1), content: fileCache[dep]});
-      })
-    }
 
-    var count = 0;
-    var total = outgoing.length;
+  servePageAndDeps(req, res, route);
+}
 
+function servePageAndDeps(req, res, route){
+  var outgoing = [];
+  var count = 0;
 
-    if(ENABLE_SERVER_PUSH) {
-      next();
-    }
+  if(depsCache[route] && depsCache[route].deps){
+    depsCache[route].deps
+    .forEach(function(dep){
+      outgoing.push({route:   dep.substring(1),
+                    content:  fileCache[dep]});
+    })
 
-    function next(){
-      var item = outgoing.shift();
-      if(outgoing.length > 0){
-        next();
-      }
-      
-      var push = res.push(item.route, {
+    outgoing.forEach(pushHandler);
+
+    function pushHandler(item){
+      var options = {
         request: {
           accept: '*/*'
         },
         response: {
           'content-type': 'application/javascript'
         }
-      }, writeHandler);
+      }
 
-      push.on('error', function(err){
-        console.log(err);
-        console.log('err!');
-      })
+      var push = res.push(item.route, options,
+                          writeHandler.bind(push, item));
+      push.on('error', errorHandler);
+    }
 
-      function writeHandler(err){
-        push.end(item.content);
-        if(outgoing.length <= 0){
-          return res.end();
-        }
+    function writeHandler(item, err, push){
+      push.end(item.content);
+      count++;
+      if(count >= outgoing.length){
+        return res.end();
       }
     }
 

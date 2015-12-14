@@ -13,9 +13,16 @@ function streamBlobToServer(stream){
     }
 
     fr.addEventListener("loadend", function(){
-      arrayBuffers.push(fr.result);
+      $.ajax({
+        url: 'https://127.0.0.1:8080/userwebcam',
+        type: 'POST',
+        contentType: 'application/octet-stream',
+        data: fr.result,
+        processData: false
+      })
     })
-    //console.log(arrayBuffers);
+
+
   }
   mr.start();
 
