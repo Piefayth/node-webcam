@@ -7,11 +7,9 @@
         "./templates/input-option-compiled.js",
         "./templates/input-source-dropdown-compiled.js",
         "./js/stream.js",
-        "./js/startup.js"
+        "./js/startup.js",
+        "./js/client/client.js"
       ]
-  },
-  "/js/client/client.js": {
-    "page": "./js/client/client.js"
   },
   "/favicon.ico": {
     "page": "./favicon.ico"

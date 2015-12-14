@@ -15,7 +15,7 @@ function streamBlobToServer(stream){
     fr.addEventListener("loadend", function(){
       arrayBuffers.push(fr.result);
     })
-    console.log(arrayBuffers);
+    //console.log(arrayBuffers);
   }
   mr.start();
 

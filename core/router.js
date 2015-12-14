@@ -2,7 +2,7 @@ var u = require('./util');
 var fs = require('fs');
 var path = require('path');
 var depsCache = require('./route-deps/index.json');
-
+var ENABLE_SERVER_PUSH = true;
 var fileCache = {};
 
 
@@ -14,13 +14,24 @@ function errorHandler(err){
 }
 
 function router(req, res){
-  console.log(req.headers);
+
   var depIndex = req.url;
+
+  if(ENABLE_SERVER_PUSH){
+    if(depsCache[depIndex].page){
+      res.write(fileCache[depsCache[depIndex].page]);
+    } else {
+      console.log(depIndex);
+      console.log(depsCache);
+    }
+  } else {
+    res.end(fileCache[depsCache[depIndex].page]);
+  }
+
+  var route = req.headers.referer || "https://" + req.headers.host + "/";
+  route = route.replace('https://' + req.headers.host, "");
   if(!res.push) return res.end();
   if(req.url === '/'){
-
-    var route = req.headers.referer || "https://" + req.headers.host + "/";
-    route = route.replace('https://' + req.headers.host, "");
     var outgoing = [];
     if(depsCache[route] && depsCache[route].deps){
       depsCache[route].deps.forEach(function(dep){
@@ -30,34 +41,39 @@ function router(req, res){
 
     var count = 0;
     var total = outgoing.length;
-    next();
 
-    if(depsCache[depIndex].page){
-      res.write(fileCache[depsCache[depIndex].page]);
-    }
+
+    if(ENABLE_SERVER_PUSH) next();
 
     function next(){
       var item = outgoing.shift();
       var push = res.push(item.route);
       push.setHeader("Content-Type", "text/javascript;charset=UTF-8")
+      push.setHeader("Content-Length", item.content.length);
+      console.log(item.route);
       var ready = push.write(item.content, null, function(err){
-        push.end();
-      });
-      push.on('finish', function(){
+        console.log(push.write.toString());
+        console.log('sent');
+        console.log(item.route);
         count++;
         console.log(count);
+        push.end();
         if(count == total){
-          console.log('done');
           res.end();
         }
       })
+      push.on('error', errorHandler);
       if(outgoing.length > 0){
         next();
       }
     }
 
   } else {
-    res.end(fileCache[depsCache[depIndex].page]);
+    if(depsCache[depIndex]){
+      res.end(fileCache[depsCache[depIndex].page]);
+    } else {
+      res.end(fileCache['.' + depIndex]);
+    }
   }
 }
 
