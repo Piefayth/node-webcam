@@ -4,7 +4,7 @@ var path = require('path');
 var depsCache = require('./route-deps/index.json');
 var ENABLE_SERVER_PUSH = true;
 var fileCache = {};
-
+var specialFileCache = {};
 
 function errorHandler(err){
   console.log(err);
@@ -18,11 +18,8 @@ function router(req, res){
   var depIndex = req.url;
 
   if(ENABLE_SERVER_PUSH){
-    if(depsCache[depIndex].page){
+    if(depsCache[depIndex]){
       res.write(fileCache[depsCache[depIndex].page]);
-    } else {
-      console.log(depIndex);
-      console.log(depsCache);
     }
   } else {
     res.end(fileCache[depsCache[depIndex].page]);
@@ -35,7 +32,7 @@ function router(req, res){
     var outgoing = [];
     if(depsCache[route] && depsCache[route].deps){
       depsCache[route].deps.forEach(function(dep){
-        outgoing.push({route: dep.substring(1), content: fileCache[dep]});
+        outgoing.push({route: dep.substring(1), content: specialFileCache[dep]});
       })
     }
 
@@ -43,29 +40,45 @@ function router(req, res){
     var total = outgoing.length;
 
 
-    if(ENABLE_SERVER_PUSH) next();
+    if(ENABLE_SERVER_PUSH)
+      next();
 
     function next(){
       var item = outgoing.shift();
       var push = res.push(item.route);
       push.setHeader("Content-Type", "text/javascript;charset=UTF-8")
-      push.setHeader("Content-Length", item.content.length);
-      console.log(item.route);
-      var ready = push.write(item.content, null, function(err){
-        console.log(push.write.toString());
-        console.log('sent');
-        console.log(item.route);
+      //push.setHeader("Content-Length", item.content.length);
+      push.writeHead(200);
+      chunk(push, item.content)
+      .then(function(){
         count++;
-        console.log(count);
-        push.end();
         if(count == total){
-          res.end();
+          return res.end();
+        }
+        next();
+      })
+    }
+
+
+    function chunk(push, arraybufs){
+
+      var buf_count = 0;
+      var init_len = arraybufs.length;
+
+      return new Promise(function(resolve, reject){
+        _chunk();
+        function _chunk(){
+          push.write(arraybufs.shift(), null, function(err){
+            buf_count++;
+            if(buf_count >= init_len){
+              push.end();
+              return resolve();
+            }
+            _chunk();
+          })
         }
       })
-      push.on('error', errorHandler);
-      if(outgoing.length > 0){
-        next();
-      }
+
     }
 
   } else {
@@ -115,6 +128,7 @@ function loadSizedFileToCache(location, size){
       fileChunkArray.push(data);
     })
     fileStream.on('end', function(){
+      specialFileCache[location] = fileChunkArray;
       fileCache[location] = Buffer.concat(fileChunkArray, size);
       resolve();
     });
