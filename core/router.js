@@ -18,11 +18,8 @@ function router(req, res){
   var depIndex = req.url;
 
   if(ENABLE_SERVER_PUSH){
-    if(depsCache[depIndex].page){
+    if(depsCache[depIndex]){
       res.write(fileCache[depsCache[depIndex].page]);
-    } else {
-      console.log(depIndex);
-      console.log(depsCache);
     }
   } else {
     res.end(fileCache[depsCache[depIndex].page]);
@@ -43,28 +40,35 @@ function router(req, res){
     var total = outgoing.length;
 
 
-    if(ENABLE_SERVER_PUSH) next();
+    if(ENABLE_SERVER_PUSH) {
+      next();
+    }
 
     function next(){
       var item = outgoing.shift();
-      var push = res.push(item.route);
-      push.setHeader("Content-Type", "text/javascript;charset=UTF-8")
-      push.setHeader("Content-Length", item.content.length);
-      console.log(item.route);
-      var ready = push.write(item.content, null, function(err){
-        console.log(push.write.toString());
-        console.log('sent');
-        console.log(item.route);
-        count++;
-        console.log(count);
-        push.end();
-        if(count == total){
-          res.end();
-        }
-      })
-      push.on('error', errorHandler);
       if(outgoing.length > 0){
         next();
+      }
+      
+      var push = res.push(item.route, {
+        request: {
+          accept: '*/*'
+        },
+        response: {
+          'content-type': 'application/javascript'
+        }
+      }, writeHandler);
+
+      push.on('error', function(err){
+        console.log(err);
+        console.log('err!');
+      })
+
+      function writeHandler(err){
+        push.end(item.content);
+        if(outgoing.length <= 0){
+          return res.end();
+        }
       }
     }
 

@@ -1,13 +1,14 @@
 var fs = require('fs');
-var http2 = require('http2');
+var spdy = require('spdy');
 var core = require('./core');
 
 var options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem')
+  cert: fs.readFileSync('keys/server.crt'),
+  key: fs.readFileSync('keys/server.key'),
+  ca: fs.readFileSync('keys/server.csr')
 };
 
-var server = http2.createServer(options);
+var server = spdy.createServer(options);
 server.listen(8080);
 core.router.preloadDependencies()
 .then(function(){
