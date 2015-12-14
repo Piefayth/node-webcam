@@ -9,4 +9,7 @@ var options = {
 
 var server = http2.createServer(options);
 server.listen(8080);
-server.on('request', core.router.requestHandler);
+core.router.preloadDependencies()
+.then(function(){
+  server.on('request', core.router.router);
+})

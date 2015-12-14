@@ -17,7 +17,10 @@ var promiseMe = function(asyncTask /**/){
 var fileSizeAndSafety = function(route){
   return promiseMe(fs.stat, route)
   .then(function(result){
-    return Promise.resolve(result.size)
+    return Promise.resolve({
+      size: result.size,
+      path: route
+    })
   })
 }
 

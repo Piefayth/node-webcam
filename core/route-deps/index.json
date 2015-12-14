@@ -1,0 +1,19 @@
+{
+  "/": {
+    "page": "./webcam.html",
+    "deps":   [
+        "./js/handlebars-v4.0.5.js",
+        "./js/jquery-2.1.4.js",
+        "./templates/input-option-compiled.js",
+        "./templates/input-source-dropdown-compiled.js",
+        "./js/stream.js",
+        "./js/startup.js"
+      ]
+  },
+  "/js/client/client.js": {
+    "page": "./js/client/client.js"
+  },
+  "/favicon.ico": {
+    "page": "./favicon.ico"
+  }
+}
