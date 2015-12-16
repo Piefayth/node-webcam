@@ -14,6 +14,31 @@ function errorHandler(err){
 }
 
 function router(req, res){
+  if(req.url === '/data'){
+    dataStream(req, res);
+  } else {
+    genericPage(req, res);
+  }
+
+}
+
+function dataStream(req, res){
+  res.writeHead(200, {"Content-Type": "text/event-stream",
+                      "Connection": "keep-alive"});
+
+  res.write("event: connecttime\n");
+  res.write("data: " + (new Date()) + "\n\n");
+
+
+
+  setInterval(function(){
+    res.write("event: DISPLAY_THIS_IMAGE\n");
+    res.write("data: ./img/image1.png\n\n");
+  }, 1000);
+
+}
+
+function genericPage(req, res){
   var depIndex = req.url;
   if(req.method == 'POST'){
     return res.end('no');

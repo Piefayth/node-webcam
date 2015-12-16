@@ -2,12 +2,9 @@
   "/": {
     "page": "./webcam.html",
     "deps":   [
-        "./js/handlebars-v4.0.5.js",
-        "./js/jquery-2.1.4.js",
-        "./templates/input-option-compiled.js",
-        "./templates/input-source-dropdown-compiled.js",
-        "./js/stream.js",
-        "./js/startup.js"
+        "./img/image1.png",
+        "./img/image2.png",
+        "./js/sse.js"
       ]
   },
   "/favicon.ico": {
