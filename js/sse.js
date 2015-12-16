@@ -9,7 +9,7 @@ window.addEventListener("load", function(){
     }
     source.addEventListener("DISPLAY_THIS_IMAGE", function(event){
       var out = document.getElementById('output');
-      out.appendChild('<div>hello</div>');
+      out.innerHTML += '<img src=' + event.data + ' /><br>';
     }, false);
 
     source.addEventListener("open", function(event){
